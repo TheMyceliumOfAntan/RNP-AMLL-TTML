@@ -1,0 +1,20 @@
+{
+  "manifest_version": 1,
+  "name": "RNP AMLL TTML 歌词源",
+  "slug": "rnpl-amll-ttml-source",
+  "version": "1.1.0",
+  "author": "BetterNCM",
+  "description": "为 RefinedNowPlayingNext 接入 AMLL TTML DB 逐词歌词数据库",
+  "betterncm_version": ">=1.0.0",
+  "ncm3-compatible": true,
+  "ncm-version-req": ">= 2.10.4",
+  "startup_script": "startup_script.js",
+  "loadAfter": ["RefinedNowPlayingNext"],
+  "injects": {
+    "Main": [
+      {
+        "file": "main.js"
+      }
+    ]
+  }
+}
