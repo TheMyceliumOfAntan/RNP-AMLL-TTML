@@ -1,6 +1,6 @@
 (function () {
   var TAG = "[RNP-TTML]";
-  var VERSION = "1.3.0";
+  var VERSION = "1.3.1";
   console.log(TAG, "startup_script v" + VERSION + " loaded");
 
   // ==== ASCII ONLY ====

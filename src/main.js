@@ -3,7 +3,7 @@ console.log("[RNP-TTML] settings panel loaded");
 (function () {
   // ASCII only: this file is read through a path that can decode non-UTF-8.
   // Chinese UI text is written as \uXXXX escapes so it never turns into "?".
-  var VERSION = "1.3.0";
+  var VERSION = "1.3.1";
   var AMLL_NAME = "AMLL TTML DB";
   var LOCAL_KEY = "config.betterncm.rnpl-amll-ttml-source";
   var REMOTE_KEY = "cc.rnpl.amll.cfg";
@@ -19,6 +19,19 @@ console.log("[RNP-TTML] settings panel loaded");
 
   function app() {
     try { return (window.betterncm && window.betterncm.app) || null; } catch (e) { return null; }
+  }
+
+  // BetterNCM exposes the client's external-navigation channel as
+  // betterncm.ncm.openUrl; a plain <a href> would open inside the NCM window.
+  // Falls back to window.open for a bare browser context.
+  function openUrl(url) {
+    try {
+      if (window.betterncm && betterncm.ncm && betterncm.ncm.openUrl) {
+        betterncm.ncm.openUrl(url);
+        return;
+      }
+    } catch (e) {}
+    try { window.open(url, "_blank", "noreferrer"); } catch (e) {}
   }
 
   function normalize(o) {
@@ -208,7 +221,16 @@ console.log("[RNP-TTML] settings panel loaded");
     about.innerHTML =
       '<div class="rnpl-about-title">RNP-AMLL-TTML v' + VERSION + "</div>" +
       "<div>\u4E3A RefinedNowPlayingNext \u63A5\u5165 AMLL TTML DB \u9010\u8BCD\u6B4C\u8BCD\u5E93\uFF0C\u652F\u6301\u7FFB\u8BD1\u3001\u7F57\u9A6C\u97F3\u3001YRC \u9010\u5B57\u52A8\u753B\u3002</div>" +
-      '<div>GitHub: <a href="https://github.com/TheMyceliumOfAntan/RNP-AMLL-TTML" target="_blank">RNP-AMLL-TTML</a></div>';
+      "<div>GitHub: </div>";
+    // <a href> would navigate inside the NCM window; openUrl hands the link to
+    // the system browser through the client's os.navigateExternal channel
+    var link = el("a", null, "RNP-AMLL-TTML");
+    link.href = "javascript:void(0)";
+    link.addEventListener("click", function (e) {
+      e.preventDefault();
+      openUrl("https://github.com/TheMyceliumOfAntan/RNP-AMLL-TTML");
+    });
+    about.lastChild.appendChild(link);
     root.appendChild(about);
 
     return root;
