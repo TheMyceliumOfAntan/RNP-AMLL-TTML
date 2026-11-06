@@ -9,8 +9,8 @@
 - **仅网易云模式**：不使用 AMLL 歌词
 - **逐词 karaoke**：TTML 解析为 YRC 逐词格式，RNP 原生渲染逐字动画
 - **翻译/罗马音**：自动提取 TTML 中的翻译和罗马音
-- **多镜像源**：默认 4 个镜像源源，支持自定义
-- **调试面板**：右下角浮动面板实时显示歌曲 ID / 镜像请求 / 解析结果
+- **多镜像源并行**：默认 4 个镜像同时请求，最先返回的 TTML 生效
+- **实时状态**：设置页与调试面板都显示当前歌曲 ID / 歌词源 / 歌词 URL / 解析行数
 
 ## 安装
 
@@ -25,23 +25,35 @@
 
 - **模式切换**：TTML 优先 / 补充模式 / 仅网易云
 - **自定义镜像源**：每行一个 URL，`{id}` 替换为歌曲 ID
-- **调试面板**：勾选后在右下角显示实时调试信息
+- **调试面板**：勾选后右下角显示实时日志与状态，**切换后立即生效，无需重载**
+- **实时状态**：歌曲 ID / 模式 / 歌词源 / 歌词 URL / 解析结果
+
+设置保存在两处：
+
+- `localStorage` 的 `config.betterncm.rnpl-amll-ttml-source`（BetterNCM 标准插件配置键）
+- `C:\betterncm\config.json` 的 `cc.rnpl.amll.cfg`（原生配置文件，重启后保留）
 
 ## 默认镜像源
 
 | 序号 | URL |
 |------|-----|
-| 1 | `https://amll-ttml-db.stevexmh.net/ncm/{id}` |
-| 2 | `https://amlldb.bikonoo.com/ncm-lyrics/{id}.ttml` |
-| 3 | `https://amll.mirror.dimeta.top/api/db/ncm-lyrics/{id}.ttml` |
-| 4 | `https://amll-ttml-db.gbclstudio.cn/ncm-lyrics/{id}.ttml` |
+| 1 | `https://amlldb.bikonoo.com/ncm-lyrics/{id}.ttml` |
+| 2 | `https://amll.mirror.dimeta.top/api/db/ncm-lyrics/{id}.ttml` |
+| 3 | `https://amll-ttml-db.gbclstudio.cn/ncm-lyrics/{id}.ttml` |
+| 4 | `https://amll-ttml-db.stevexmh.net/ncm/{id}` |
 
 ## 技术实现
 
-- `startup_script.js` — 通过 BetterNCM CEF 的 `executeJavaScript` 直接注入，轮询 RNP 的 `onProcessLyrics` / `rnpDispatchHook`，hook 歌词流程
-- `main.js` — BetterNCM `plugin.onConfig` API 提供设置面板
+- `startup_script.js` — BetterNCM 直接注入到 NCM 文档，轮询 RNP 的 `onProcessLyrics` / `rnpDispatchHook` 接管歌词流
+- `main.js` — BetterNCM `plugin.onConfig` 提供设置面板
 - TTML XML 解析 → NetEase API 格式 (`lrc` + `yrc` + `ytlrc` + `yromalrc`)
-- `rnpDispatchHook` (NCM 3.x Redux 路径) + `onProcessLyrics` (NCM 2.x) 双路径 hook
+
+### 关键约束
+
+1. **源码必须是纯 ASCII**。`startup_script.js` / `main.js` / `manifest.json` 由 NCM 文档以非 UTF-8 解码，直接写中文会变成 `?`。中文一律写成 `\uXXXX` 转义。
+2. **`plugins_runtime` 会被覆盖**。BetterNCM「重载插件」会从 `plugins/*.plugin` 重新解压，改 runtime 目录无效，必须重新打包 `.plugin`。
+3. **LRC 与 YRC 行数必须一一对应**，行数不一致时 RNP 会丢弃逐词数据。
+4. 歌词里的 `(` 会被替换为全角 `（`，否则 RNP 的 YRC 词解析正则会在该字符处截断。
 
 ## License
 
